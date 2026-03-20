@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FDM Print Quote</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+        <rect x="4" y="16" width="20" height="4" rx="2" fill="currentColor" opacity="0.9"/>
+        <rect x="6" y="10" width="16" height="4" rx="2" fill="currentColor" opacity="0.7"/>
+        <rect x="9" y="4" width="10" height="4" rx="2" fill="currentColor" opacity="0.5"/>
+        <rect x="2" y="22" width="24" height="3" rx="1.5" fill="currentColor" opacity="0.3"/>
+      </svg>
+      <span>PrintQuote</span>
+    </div>
+    <p class="tagline">FDM 3D Printing — Instant Quote Request</p>
+  </header>
+
+  <main>
+    <form
+      name="quote-request"
+      method="POST"
+      data-netlify="true"
+      netlify-honeypot="bot-field"
+      enctype="multipart/form-data"
+      id="quoteForm"
+      novalidate
+    >
+      <!-- Netlify hidden fields -->
+      <input type="hidden" name="form-name" value="quote-request" />
+      <p class="hidden"><label>Don't fill this out: <input name="bot-field" /></label></p>
+
+      <!-- ── STEP 1: Contact ── -->
+      <section class="card" id="step-contact">
+        <div class="step-label">01 — Contact</div>
+        <div class="field-row">
+          <div class="field">
+            <label for="name">Full name <span class="req">*</span></label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              autocomplete="name"
+              placeholder="Jane Smith"
+              required
+              minlength="2"
+              maxlength="100"
+            />
+            <span class="err" id="err-name"></span>
+          </div>
+          <div class="field">
+            <label for="email">Email address <span class="req">*</span></label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              autocomplete="email"
+              placeholder="jane@example.com"
+              required
+              maxlength="254"
+            />
+            <span class="err" id="err-email"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── STEP 2: Print Details ── -->
+      <section class="card" id="step-details">
+        <div class="step-label">02 — Print Details</div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="material">Material <span class="req">*</span></label>
+            <div class="select-wrap">
+              <select id="material" name="material" required>
+                <option value="" disabled selected>Select material…</option>
+                <option value="PLA">PLA — General purpose</option>
+                <option value="PETG">PETG — Durable &amp; food-safe</option>
+                <option value="ABS">ABS — Heat &amp; impact resistant</option>
+                <option value="TPU">TPU — Flexible / rubber-like</option>
+                <option value="ASA">ASA — UV &amp; weather resistant</option>
+                <option value="Unsure">Not sure — recommend for me</option>
+              </select>
+            </div>
+            <span class="err" id="err-material"></span>
+          </div>
+
+          <div class="field">
+            <label for="quantity">Quantity <span class="req">*</span></label>
+            <input
+              type="number"
+              id="quantity"
+              name="quantity"
+              min="1"
+              max="9999"
+              step="1"
+              placeholder="1"
+              required
+            />
+            <span class="err" id="err-quantity"></span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="notes">Notes &amp; requirements</label>
+          <textarea
+            id="notes"
+            name="notes"
+            rows="3"
+            maxlength="2000"
+            placeholder="Colour preference, finish, tolerances, deadline, or anything else…"
+          ></textarea>
+          <span class="char-count" id="notes-count">0 / 2000</span>
+        </div>
+      </section>
+
+      <!-- ── STEP 3: STL Upload ── -->
+      <section class="card" id="step-upload">
+        <div class="step-label">03 — Upload STL File</div>
+        <p class="upload-hint">Only <code>.stl</code> files are accepted. Max size: <strong>50 MB</strong>.</p>
+
+        <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="Click or drag an STL file here to upload">
+          <input
+            type="file"
+            id="stlFile"
+            name="stl_file"
+            accept=".stl"
+            required
+            aria-describedby="err-file"
+          />
+          <div class="drop-content" id="dropContent">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+              <path d="M20 28V12M13 19l7-7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="4" y="30" width="32" height="6" rx="3" fill="currentColor" opacity="0.15"/>
+            </svg>
+            <p class="drop-primary">Drag &amp; drop your STL here</p>
+            <p class="drop-secondary">or <span class="link-look">click to browse</span></p>
+          </div>
+          <div class="file-preview hidden" id="filePreview">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+              <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            </svg>
+            <span id="fileName">—</span>
+            <span id="fileSize" class="muted"></span>
+            <button type="button" id="removeFile" aria-label="Remove file">✕</button>
+          </div>
+        </div>
+        <span class="err" id="err-file"></span>
+
+        <ul class="safety-checks" id="safetyChecks" aria-live="polite"></ul>
+      </section>
+
+      <!-- ── Submit ── -->
+      <div class="submit-row">
+        <button type="submit" id="submitBtn" class="btn-submit" disabled>
+          <span id="btnText">Submit Quote Request</span>
+          <span id="btnSpinner" class="spinner hidden" aria-hidden="true"></span>
+        </button>
+        <p class="submit-note">We'll respond within 1 business day with a full quote.</p>
+      </div>
+
+    </form>
+  </main>
+
+  <!-- Success overlay -->
+  <div class="overlay hidden" id="successOverlay" role="dialog" aria-modal="true" aria-labelledby="successTitle">
+    <div class="overlay-card">
+      <div class="success-icon" aria-hidden="true">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+          <circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+          <path d="M14 24l8 8 12-14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h2 id="successTitle">Quote received!</h2>
+      <p>Thanks — we've got your STL and details. Expect a quote in your inbox within 1 business day.</p>
+      <button type="button" class="btn-submit" onclick="resetForm()">Submit another quote</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
