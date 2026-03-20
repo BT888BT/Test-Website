@@ -124,13 +124,14 @@
         <div class="step-label">03 — Upload STL File</div>
         <p class="upload-hint">Only <code>.stl</code> files are accepted. Max size: <strong>50 MB</strong>.</p>
 
+        <!-- Hidden field: populated with the file.io download URL after upload -->
+        <input type="hidden" id="stlFileUrl" name="stl_file_url" />
+
         <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="Click or drag an STL file here to upload">
           <input
             type="file"
             id="stlFile"
-            name="stl_file"
             accept=".stl"
-            required
             aria-describedby="err-file"
           />
           <div class="drop-content" id="dropContent">
@@ -179,7 +180,7 @@
       </div>
       <h2 id="successTitle">Quote received!</h2>
       <p>Thanks — we've got your STL and details. Expect a quote in your inbox within 1 business day.</p>
-      <button type="button" class="btn-submit" onclick="resetForm()">Submit another quote</button>
+      <button type="button" class="btn-submit" id="resetBtn">Submit another quote</button>
     </div>
   </div>
 

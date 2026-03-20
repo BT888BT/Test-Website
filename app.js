@@ -291,36 +291,61 @@ removeFile.addEventListener('click', e => {
 
 /* ────────────────────────────────────────
    FORM SUBMISSION
-   Uses Netlify Forms (standard POST).
-   On success shows the overlay.
+   Step 1: Upload STL to file.io → get URL
+   Step 2: POST URL + fields to Netlify Forms
 ──────────────────────────────────────── */
+
+async function uploadFileToFileIo(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  // expires=14d — link lives for 14 days, one-time download
+  const res = await fetch('https://file.io/?expires=14d', {
+    method: 'POST',
+    body: fd,
+  });
+  if (!res.ok) throw new Error(`file.io responded ${res.status}`);
+  const json = await res.json();
+  if (!json.success || !json.link) throw new Error('file.io: no link in response');
+  return json.link;
+}
 
 form.addEventListener('submit', async e => {
   e.preventDefault();
 
   // Final validation pass
-  const nameOk     = validateName();
-  const emailOk    = validateEmail();
-  const matOk      = validateMaterial();
-  const qtyOk      = validateQuantity();
-  const fileOk     = fileChecksPassed;
+  const nameOk = validateName();
+  const emailOk = validateEmail();
+  const matOk  = validateMaterial();
+  const qtyOk  = validateQuantity();
+  const fileOk = fileChecksPassed;
 
   if (!nameOk || !emailOk || !matOk || !qtyOk || !fileOk) {
     if (!fileOk) setErr('file', 'Please upload a valid STL file.');
     return;
   }
 
-  // Sanitise text fields before submission
-  document.getElementById('name').value = sanitiseText(document.getElementById('name').value);
+  // Sanitise text fields
+  document.getElementById('name').value  = sanitiseText(document.getElementById('name').value);
   document.getElementById('notes').value = sanitiseText(document.getElementById('notes').value);
 
-  // Show loading
-  btnText.textContent = 'Submitting…';
+  // Show loading — step 1
+  btnText.textContent = 'Uploading file…';
   btnSpinner.classList.remove('hidden');
   submitBtn.disabled = true;
 
   try {
+    // 1 — Upload STL to file.io
+    const file = fileInput.files[0];
+    const fileUrl = await uploadFileToFileIo(file);
+
+    // Inject URL into the hidden field so Netlify receives it
+    document.getElementById('stlFileUrl').value = fileUrl;
+
+    // 2 — Submit form fields to Netlify (no file attachment)
+    btnText.textContent = 'Submitting quote…';
     const formData = new FormData(form);
+    // Make sure the raw file is not accidentally included
+    formData.delete('stl_file');
 
     const res = await fetch('/', {
       method: 'POST',
@@ -331,20 +356,23 @@ form.addEventListener('submit', async e => {
       successOv.classList.remove('hidden');
       successOv.focus();
     } else {
-      throw new Error(`Server returned ${res.status}`);
+      throw new Error(`Netlify returned ${res.status}`);
     }
+
   } catch (err) {
     console.error('Submission error:', err);
-    btnText.textContent = 'Submission failed — please try again';
+    const msg = err.message.includes('file.io')
+      ? 'File upload failed — check your connection and try again'
+      : 'Submission failed — please try again';
+    btnText.textContent = msg;
     btnSpinner.classList.add('hidden');
     submitBtn.disabled = false;
-    // Restore after 4s
-    setTimeout(() => { btnText.textContent = 'Submit Quote Request'; }, 4000);
+    setTimeout(() => { btnText.textContent = 'Submit Quote Request'; }, 5000);
   }
 });
 
-/* ── Reset form (after success) ── */
-window.resetForm = function () {
+/* ── Reset form ── */
+function resetForm() {
   form.reset();
   successOv.classList.add('hidden');
   safetyList.innerHTML = '';
@@ -356,11 +384,22 @@ window.resetForm = function () {
   btnText.textContent = 'Submit Quote Request';
   btnSpinner.classList.add('hidden');
   notesCount.textContent = '0 / 2000';
-  // Clear all field states
   ['name','email','material','quantity'].forEach(id => {
-    const el = document.getElementById(id);
-    el.classList.remove('valid','invalid');
+    document.getElementById(id).classList.remove('valid','invalid');
   });
   ['name','email','material','quantity','file'].forEach(id => clearErr(id));
   window.scrollTo({ top: 0, behavior: 'smooth' });
-};
+}
+
+// Button inside overlay
+document.getElementById('resetBtn').addEventListener('click', resetForm);
+
+// Click outside the card to dismiss
+successOv.addEventListener('click', e => {
+  if (e.target === successOv) resetForm();
+});
+
+// Escape key to dismiss
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !successOv.classList.contains('hidden')) resetForm();
+});
